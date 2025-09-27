@@ -11,7 +11,7 @@ import { PortfolioOverview } from './PortfolioOverview'
 import { PriceChart } from './PriceChart'
 import { getContractAddresses, YIELD_SPLITTER_ABI } from '../config/contracts'
 
-export function YieldSplittingDashboard() {
+export function YieldSplittingDashboard(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<'deposit' | 'split' | 'swap' | 'redeem'>('deposit')
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
@@ -122,7 +122,7 @@ export function YieldSplittingDashboard() {
 
       <div className="container mx-auto p-4">
         {/* Protocol Stats */}
-        {contractStats && contractStats.length >= 4 && (
+        {contractStats && Array.isArray(contractStats) && contractStats.length >= 4 ? (
           <div className="stats shadow mb-6 w-full">
             <div className="stat">
               <div className="stat-title">Total Value Locked</div>
@@ -150,7 +150,7 @@ export function YieldSplittingDashboard() {
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Action Panel */}
@@ -165,7 +165,7 @@ export function YieldSplittingDashboard() {
           <div className="space-y-6">
             {/* Portfolio Overview */}
             <PortfolioOverview 
-              userPosition={userPosition}
+              userPosition={userPosition as readonly [bigint, bigint, bigint] | undefined}
               kdaBalance={kdaBalance}
               wkdaBalance={wkdaBalance}
             />

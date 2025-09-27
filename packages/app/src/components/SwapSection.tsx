@@ -140,23 +140,10 @@ export function SwapSection() {
     functionName: 'getContractStats',
   })
 
-  // Check allowance for the from token
-  const fromTokenAddress = fromToken === 'PT' ? contracts.principalToken : contracts.yieldToken
-  const { data: currentAllowance, refetch: refetchAllowance } = useReadContract({
-    address: fromTokenAddress,
-    abi: TOKEN_ABI,
-    functionName: 'allowance',
-    args: address ? [address, contracts.mockAMM] : undefined,
-  })
-
-  // Check if we have sufficient allowance
-  const requiredAmount = fromAmount ? parseEther(fromAmount) : 0n
-  const hasSufficientAllowance = currentAllowance && fromAmount ? 
-    currentAllowance >= requiredAmount : false
 
   // Auto-fill maturity time when contract stats are available
   useEffect(() => {
-    if (contractStats && contractStats.length >= 3) {
+    if (contractStats && Array.isArray(contractStats) && contractStats.length >= 3) {
       const maturityTimestamp = Number(contractStats[2])
       const currentTimestamp = Math.floor(Date.now() / 1000)
       const timeToMaturitySeconds = maturityTimestamp - currentTimestamp
@@ -233,39 +220,6 @@ export function SwapSection() {
     }
   }
 
-  const handleInitializePool = async () => {
-    try {
-      const initAmount = parseEther('0.01') // Small initial liquidity
-      
-      // First approve both tokens
-      await writeContract({
-        address: contracts.principalToken,
-        abi: TOKEN_ABI,
-        functionName: 'approve',
-        args: [contracts.mockAMM, initAmount],
-      })
-      
-      await writeContract({
-        address: contracts.yieldToken,
-        abi: TOKEN_ABI,
-        functionName: 'approve',
-        args: [contracts.mockAMM, initAmount],
-      })
-      
-      // Then initialize the pool
-      await writeContract({
-        address: contracts.mockAMM,
-        abi: MOCK_AMM_ABI,
-        functionName: 'addInitialLiquidity',
-        args: [initAmount, initAmount],
-      })
-      
-      toast.success('Pool initialized successfully!')
-    } catch (error) {
-      console.error('Pool initialization failed:', error)
-      toast.error('Pool initialization failed. Make sure you have PT and YT tokens.')
-    }
-  }
 
   const handleSwap = async () => {
     if (!fromAmount || !toAmount || parseFloat(fromAmount) <= 0) {

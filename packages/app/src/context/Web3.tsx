@@ -22,8 +22,8 @@ const metadata = {
 createAppKit({
   adapters: [WALLETCONNECT_ADAPTER],
   projectId: WALLETCONNECT_PROJECT_ID,
-  networks: [mainnet, arbitrum, base, polygon, optimism, sepolia, kadenaTestnet as any],
-  defaultNetwork: kadenaTestnet as any,
+  networks: [mainnet, arbitrum, base, polygon, optimism, sepolia, kadenaTestnet],
+  defaultNetwork: kadenaTestnet,
   metadata: metadata,
   features: {
     analytics: true, // Optional - defaults to your Cloud configuration

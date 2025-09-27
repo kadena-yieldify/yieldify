@@ -1,3 +1,5 @@
 export async function GET() {
-  return Response.json({ data: 'Hello World!' })
+  return new Response(JSON.stringify({ data: 'Hello World!' }), {
+    headers: { 'Content-Type': 'application/json' }
+  })
 }

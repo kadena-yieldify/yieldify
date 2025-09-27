@@ -49,7 +49,7 @@ export function RedeemSection() {
   })
 
   const isMatured = maturity ? Date.now() / 1000 >= Number(maturity) : false
-  const claimableYield = userPosition ? userPosition[2] : 0n
+  const claimableYield = userPosition && Array.isArray(userPosition) && userPosition.length >= 3 ? userPosition[2] : 0n
   const ptBalanceFormatted = ptBalance ? formatEther(ptBalance) : '0'
   const ytBalanceFormatted = ytBalance ? formatEther(ytBalance) : '0'
 

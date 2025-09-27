@@ -10,7 +10,6 @@ import { getContractAddresses, YIELD_SPLITTER_ABI, WRAPPED_KDA_ABI, TOKEN_ABI } 
 export function SplitSection() {
   const [splitAmount, setSplitAmount] = useState('')
   const [isApproving, setIsApproving] = useState(false)
-  const [isApproved, setIsApproved] = useState(false)
 
   const { address } = useAccount()
   const chainId = useChainId()
@@ -75,7 +74,6 @@ export function SplitSection() {
       
       // Reset form state
       setSplitAmount('')
-      setIsApproved(false)
       setIsApproving(false)
       
       toast.success('Transaction completed successfully!')
@@ -326,7 +324,7 @@ export function SplitSection() {
           <div className="collapse-content text-sm"> 
             <div className="space-y-2">
               <p><strong>Principal Tokens (PT):</strong> Represent your original deposit. Can be redeemed 1:1 for wKDA when the contract matures.</p>
-              <p><strong>Yield Tokens (YT):</strong> Represent the yield-earning rights. Accumulate yield over time based on the underlying asset's performance.</p>
+              <p><strong>Yield Tokens (YT):</strong> Represent the yield-earning rights. Accumulate yield over time based on the underlying asset&apos;s performance.</p>
               <p><strong>Benefits:</strong> Trade yield separately from principal, optimize your risk/reward profile, or combine both for maximum returns.</p>
             </div>
           </div>
