@@ -4,7 +4,7 @@ async function main() {
   console.log("🚀 Deploying MockAMM...");
 
   // Get the deployed YieldSplitter address (update this after deployment)
-  const YIELD_SPLITTER_ADDRESS = "0x..."; // Update with your YieldSplitter address
+  const YIELD_SPLITTER_ADDRESS = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"; // YieldSplitter address from deployment
   
   if (YIELD_SPLITTER_ADDRESS === "0x...") {
     console.error("❌ Please update YIELD_SPLITTER_ADDRESS in this script");

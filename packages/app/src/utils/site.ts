@@ -1,9 +1,9 @@
-export const SITE_EMOJI = '⚡'
-export const SITE_NAME = 'Nexth'
-export const SITE_INFO = 'Quickly ship Web3 Apps'
+export const SITE_EMOJI = '🌾'
+export const SITE_NAME = 'Kadena Yield Splitter'
+export const SITE_INFO = 'Split Your Yield, Maximize Your Returns'
 export const SITE_DESCRIPTION =
-  'A Next.js + Ethereum starter kit with Viem, Wagmi, Web3Modal, SIWE, Tailwind, daisyUI and more!'
-export const SITE_URL = 'https://nexth.vercel.app'
+  'A Pendle Finance-inspired yield splitting protocol built on Kadena blockchain. Split your yield-bearing tokens into Principal Tokens (PT) and Yield Tokens (YT) for advanced DeFi strategies.'
+export const SITE_URL = 'https://kadena-yield-splitter.vercel.app'
 
-export const SOCIAL_TWITTER = 'wslyvh'
-export const SOCIAL_GITHUB = 'wslyvh/nexth'
+export const SOCIAL_TWITTER = 'kadena_io'
+export const SOCIAL_GITHUB = 'kadena-yieldify/yieldify'

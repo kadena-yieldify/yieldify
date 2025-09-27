@@ -98,7 +98,7 @@ export function YieldSplittingDashboard() {
 
       <div className="container mx-auto p-4">
         {/* Protocol Stats */}
-        {contractStats && (
+        {contractStats && contractStats.length >= 4 && (
           <div className="stats shadow mb-6 w-full">
             <div className="stat">
               <div className="stat-title">Total Value Locked</div>

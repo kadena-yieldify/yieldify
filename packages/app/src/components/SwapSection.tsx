@@ -85,6 +85,8 @@ export function SwapSection() {
   const [toAmount, setToAmount] = useState('')
   const [slippage, setSlippage] = useState('0.5') // 0.5% default slippage
   const [isLoading, setIsLoading] = useState(false)
+  const [yieldPercent, setYieldPercent] = useState('5') // r: default 5%
+  const [maturityYears, setMaturityYears] = useState('1') // t: default 1 year
 
   const { address } = useAccount()
   const { writeContract, data: hash, isPending } = useWriteContract()
@@ -105,32 +107,54 @@ export function SwapSection() {
     args: address ? [address] : undefined,
   })
 
-  // Get pool info
+  // Get pool info (optional: used for reserves display only)
   const { data: poolInfo } = useReadContract({
     address: MOCK_AMM_ADDRESS,
     abi: MOCK_AMM_ABI,
     functionName: 'getPoolInfo',
   })
 
-  // Get quote for swap
-  const { data: quote } = useReadContract({
-    address: MOCK_AMM_ADDRESS,
-    abi: MOCK_AMM_ABI,
-    functionName: fromToken === 'PT' ? 'getQuotePTForYT' : 'getQuoteYTForPT',
-    args: fromAmount ? [parseEther(fromAmount)] : undefined,
-    query: {
-      enabled: !!fromAmount && parseFloat(fromAmount) > 0,
-    },
-  })
-
-  // Update to amount when quote changes
+  // Compute toAmount using Pendle-like formula
+  // PT discount factor DF = 1 / (1 + r)^t
+  // Split of 1 unit: PT = DF, YT = 1 - DF
+  // Conversions:
+  //  - PT -> YT: for each PT, equivalent YT = PT * (1/DF - 1)
+  //  - YT -> PT: for each YT, equivalent PT = YT * (DF / (1 - DF))
   useEffect(() => {
-    if (quote && fromAmount) {
-      setToAmount(formatEther(quote))
-    } else {
+    const amt = parseFloat(fromAmount)
+    const r = parseFloat(yieldPercent)
+    const t = parseFloat(maturityYears)
+
+    if (!isFinite(amt) || amt <= 0 || !isFinite(r) || r < 0 || !isFinite(t) || t <= 0) {
       setToAmount('')
+      return
     }
-  }, [quote, fromAmount])
+
+    const rDec = r / 100
+    const DF = 1 / Math.pow(1 + rDec, t)
+
+    // Guard against edge cases
+    if (!isFinite(DF) || DF <= 0 || DF >= 1) {
+      setToAmount('')
+      return
+    }
+
+    let out = 0
+    if (fromToken === 'PT') {
+      out = amt * (1 / DF - 1)
+    } else {
+      const denom = (1 - DF)
+      if (denom <= 0) {
+        setToAmount('')
+        return
+      }
+      out = amt * (DF / denom)
+    }
+
+    // Avoid scientific notation for small amounts
+    const outStr = out.toFixed(6).replace(/\.0+$/, '')
+    setToAmount(outStr)
+  }, [fromAmount, fromToken, yieldPercent, maturityYears])
 
   const handleSwapTokens = () => {
     setFromToken(fromToken === 'PT' ? 'YT' : 'PT')
@@ -211,7 +235,7 @@ export function SwapSection() {
         </h2>
 
         {/* Pool Info */}
-        {poolInfo && (
+        {poolInfo && poolInfo.length >= 2 && (
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="stat bg-base-200 rounded-lg">
               <div className="stat-title">PT Reserve</div>
@@ -273,10 +297,21 @@ export function SwapSection() {
           <label className="label">
             <span className="label-text">To</span>
             <span className="label-text-alt">
-              {poolInfo && fromToken === 'PT' ? 
-                `1 PT = ${parseFloat(formatEther(poolInfo[2])).toFixed(4)} YT` :
-                `1 YT = ${parseFloat(formatEther(poolInfo[3] || 0n)).toFixed(4)} PT`
-              }
+              {/* Display formula-based instantaneous rate */}
+              {(() => {
+                const r = parseFloat(yieldPercent)
+                const t = parseFloat(maturityYears)
+                if (!isFinite(r) || r < 0 || !isFinite(t) || t <= 0) return 'Enter r and t'
+                const DF = 1 / Math.pow(1 + r / 100, t)
+                if (!isFinite(DF) || DF <= 0 || DF >= 1) return 'Check r and t'
+                if (fromToken === 'PT') {
+                  const rate = 1 / DF - 1
+                  return `1 PT ≈ ${rate.toFixed(4)} YT`
+                } else {
+                  const rate = DF / (1 - DF)
+                  return `1 YT ≈ ${rate.toFixed(4)} PT`
+                }
+              })()}
             </span>
           </label>
           <div className="input-group">
@@ -289,6 +324,40 @@ export function SwapSection() {
             />
             <div className="btn btn-ghost btn-sm cursor-default">
               {toToken}-wKDA
+            </div>
+          </div>
+        </div>
+
+        {/* Yield and Maturity Inputs */}
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">Pricing Parameters</span>
+            <span className="label-text-alt">Pendle-style DF = 1/(1+r)^t</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="input-group">
+              <span className="btn btn-ghost btn-sm">r (%)</span>
+              <input
+                type="number"
+                className="input input-bordered input-sm w-full"
+                value={yieldPercent}
+                onChange={(e) => setYieldPercent(e.target.value)}
+                step="0.1"
+                min="0"
+                max="100"
+              />
+            </div>
+            <div className="input-group">
+              <span className="btn btn-ghost btn-sm">t (years)</span>
+              <input
+                type="number"
+                className="input input-bordered input-sm w-full"
+                value={maturityYears}
+                onChange={(e) => setMaturityYears(e.target.value)}
+                step="0.1"
+                min="0.1"
+                max="50"
+              />
             </div>
           </div>
         </div>
