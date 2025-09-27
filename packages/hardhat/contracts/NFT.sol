@@ -7,7 +7,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 contract NexthFT is ERC721, Ownable {
   uint256 private _tokenIdCounter;
 
-  constructor() ERC721('NexthFT', 'NFT') Ownable(msg.sender) {}
+  constructor() ERC721('NexthFT', 'NFT') {}
 
   function safeMint(address to) public onlyOwner {
     uint256 tokenId = _tokenIdCounter;

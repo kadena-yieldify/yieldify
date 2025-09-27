@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { MockAMM, YieldSplitter, WrappedKDA, PrincipalToken, YieldToken } from "../typechain-types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("MockAMM", function () {
   let wrappedKDA: WrappedKDA;
@@ -9,9 +9,9 @@ describe("MockAMM", function () {
   let principalToken: PrincipalToken;
   let yieldToken: YieldToken;
   let mockAMM: MockAMM;
-  let owner: SignerWithAddress;
-  let user1: SignerWithAddress;
-  let user2: SignerWithAddress;
+  let owner: HardhatEthersSigner;
+  let user1: HardhatEthersSigner;
+  let user2: HardhatEthersSigner;
   
   const MATURITY_DURATION = 365 * 24 * 60 * 60; // 1 year
   const INITIAL_LIQUIDITY_PT = ethers.parseEther("100.0");
@@ -224,7 +224,7 @@ describe("MockAMM", function () {
       const smallRate = (smallQuote * ethers.parseEther("1.0")) / smallSwap;
       const largeRate = (largeQuote * ethers.parseEther("1.0")) / largeSwap;
       
-      expect(smallRate).to.be.gt(largeRate);
+      expect(smallRate).to.be.greaterThan(largeRate);
     });
 
     it("Should apply trading fees", async function () {
@@ -232,11 +232,11 @@ describe("MockAMM", function () {
       const quote = await mockAMM.getQuotePTForYT(swapAmount);
       
       // With 0.3% fee, output should be less than input
-      expect(quote).to.be.lt(swapAmount);
+      expect(quote).to.be.lessThan(swapAmount);
       
       // The difference should be approximately the fee (accounting for price impact)
       const feeApprox = swapAmount * 30n / 10000n; // 0.3%
-      expect(swapAmount - quote).to.be.gte(feeApprox);
+      expect(swapAmount - quote).to.be.greaterThanOrEqual(feeApprox);
     });
   });
 
@@ -264,8 +264,8 @@ describe("MockAMM", function () {
       
       // Pool should still be functional
       const [ptReserve, ytReserve] = await mockAMM.getPoolInfo();
-      expect(ptReserve).to.be.gt(0);
-      expect(ytReserve).to.be.gt(0);
+      expect(ptReserve).to.be.greaterThan(0);
+      expect(ytReserve).to.be.greaterThan(0);
     });
   });
 
@@ -276,12 +276,12 @@ describe("MockAMM", function () {
       const ptToYtQuote = await mockAMM.getQuotePTForYT(testAmount);
       const ytToPtQuote = await mockAMM.getQuoteYTForPT(testAmount);
       
-      expect(ptToYtQuote).to.be.gt(0);
-      expect(ytToPtQuote).to.be.gt(0);
+      expect(ptToYtQuote).to.be.greaterThan(0);
+      expect(ytToPtQuote).to.be.greaterThan(0);
       
       // Due to fees and price impact, quotes should be less than input
-      expect(ptToYtQuote).to.be.lt(testAmount);
-      expect(ytToPtQuote).to.be.lt(testAmount);
+      expect(ptToYtQuote).to.be.lessThan(testAmount);
+      expect(ytToPtQuote).to.be.lessThan(testAmount);
     });
 
     it("Should maintain price consistency", async function () {

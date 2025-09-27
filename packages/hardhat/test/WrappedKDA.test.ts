@@ -1,13 +1,13 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { WrappedKDA } from "../typechain-types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("WrappedKDA", function () {
   let wrappedKDA: WrappedKDA;
-  let owner: SignerWithAddress;
-  let user1: SignerWithAddress;
-  let user2: SignerWithAddress;
+  let owner: HardhatEthersSigner;
+  let user1: HardhatEthersSigner;
+  let user2: HardhatEthersSigner;
 
   beforeEach(async function () {
     [owner, user1, user2] = await ethers.getSigners();
@@ -24,11 +24,11 @@ describe("WrappedKDA", function () {
     });
 
     it("Should have 18 decimals", async function () {
-      expect(await wrappedKDA.decimals()).to.equal(18);
+      expect(await wrappedKDA.decimals()).to.equal(18n);
     });
 
     it("Should start with zero total supply", async function () {
-      expect(await wrappedKDA.totalSupply()).to.equal(0);
+      expect(await wrappedKDA.totalSupply()).to.equal(0n);
     });
   });
 
@@ -86,10 +86,10 @@ describe("WrappedKDA", function () {
       expect(await wrappedKDA.totalSupply()).to.equal(ethers.parseEther("1.0"));
       
       const finalBalance = await ethers.provider.getBalance(user1.address);
-      expect(finalBalance).to.be.closeTo(
-        initialBalance + withdrawAmount - gasUsed,
-        ethers.parseEther("0.001") // Small tolerance for gas estimation
-      );
+      const expectedBalance = initialBalance + withdrawAmount - gasUsed;
+      const tolerance = ethers.parseEther("0.001"); // Small tolerance for gas estimation
+      expect(finalBalance).to.be.greaterThanOrEqual(expectedBalance - tolerance);
+      expect(finalBalance).to.be.lessThanOrEqual(expectedBalance + tolerance);
     });
 
     it("Should emit Withdrawal event", async function () {

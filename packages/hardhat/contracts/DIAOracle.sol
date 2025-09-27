@@ -4,17 +4,17 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
+// DIA Oracle interface (simplified for MVP)
+interface IDIAOracle {
+    function getValue(string memory key) external view returns (uint128, uint128);
+}
+
 /**
  * @title DIAOracle
  * @dev Oracle contract for fetching price feeds using DIA data
  * @notice This contract provides price feeds for PT and YT tokens
  */
 contract DIAOracle is Ownable, ReentrancyGuard {
-    
-    // DIA Oracle interface (simplified for MVP)
-    interface IDIAOracle {
-        function getValue(string memory key) external view returns (uint128, uint128);
-    }
     
     // Price feed data structure
     struct PriceFeed {

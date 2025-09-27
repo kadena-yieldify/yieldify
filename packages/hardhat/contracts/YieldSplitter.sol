@@ -57,7 +57,7 @@ contract YieldSplitter is ReentrancyGuard, Ownable {
     }
     
     constructor(
-        address _wrappedKDA,
+        address payable _wrappedKDA,
         uint256 _maturityDuration // Duration in seconds (e.g., 365 days)
     ) {
         wrappedKDA = WrappedKDA(_wrappedKDA);
