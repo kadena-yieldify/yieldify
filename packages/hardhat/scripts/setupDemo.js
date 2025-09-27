@@ -3,21 +3,19 @@ const { ethers } = require("hardhat");
 async function main() {
   console.log("🎭 Setting up demo environment...");
 
-  // Contract addresses (update these after deployment)
-  const WRAPPED_KDA_ADDRESS = "0x..."; // Update with deployed address
-  const YIELD_SPLITTER_ADDRESS = "0x..."; // Update with deployed address
-  const MOCK_AMM_ADDRESS = "0x..."; // Update with deployed address
-  const DIA_ORACLE_ADDRESS = "0x..."; // Update with deployed address
+  // Contract addresses (deployed on Kadena testnet)
+  const WRAPPED_KDA_ADDRESS = "0x31c13bed4969a135bE285Bcb7BfDc56b601EaA43";
+  const YIELD_SPLITTER_ADDRESS = "0x5405d3e877636212CBfBA5Cd7415ca8C26700Bf4";
+  const MOCK_AMM_ADDRESS = "0x5158337793D9913b5967B91a32bB328521D7C7fb";
+  const DIA_ORACLE_ADDRESS = "0xe702013eA3045D265720337127f06a6cCab4Fd15";
 
   if (WRAPPED_KDA_ADDRESS === "0x..." || YIELD_SPLITTER_ADDRESS === "0x...") {
     console.error("❌ Please update contract addresses in this script");
     process.exit(1);
   }
 
-  const [deployer, user1, user2] = await ethers.getSigners();
+  const [deployer] = await ethers.getSigners();
   console.log("👤 Deployer:", deployer.address);
-  console.log("👤 User1:", user1.address);
-  console.log("👤 User2:", user2.address);
 
   // Get contract instances
   const wrappedKDA = await ethers.getContractAt("WrappedKDA", WRAPPED_KDA_ADDRESS);
@@ -47,29 +45,23 @@ async function main() {
 
   console.log("\n💰 Step 1: Wrapping KDA to wKDA...");
   
-  // Wrap KDA for demo users
-  const wrapAmount = ethers.parseEther("100.0");
+  // Wrap KDA for demo
+  const wrapAmount = ethers.parseEther("0.5");
   
   await wrappedKDA.connect(deployer).deposit({ value: wrapAmount });
-  await wrappedKDA.connect(user1).deposit({ value: wrapAmount });
-  await wrappedKDA.connect(user2).deposit({ value: wrapAmount });
   
-  console.log("✅ Wrapped 100 KDA for each user");
+  console.log("✅ Wrapped 0.5 KDA for deployer");
 
   console.log("\n✂️ Step 2: Splitting tokens...");
   
   // Approve and split tokens
-  const splitAmount = ethers.parseEther("50.0");
+  const splitAmount = ethers.parseEther("0.3");
   
   await wrappedKDA.connect(deployer).approve(YIELD_SPLITTER_ADDRESS, splitAmount);
-  await wrappedKDA.connect(user1).approve(YIELD_SPLITTER_ADDRESS, splitAmount);
-  await wrappedKDA.connect(user2).approve(YIELD_SPLITTER_ADDRESS, splitAmount);
   
   await yieldSplitter.connect(deployer).depositAndSplit(splitAmount);
-  await yieldSplitter.connect(user1).depositAndSplit(splitAmount);
-  await yieldSplitter.connect(user2).depositAndSplit(splitAmount);
   
-  console.log("✅ Split 50 wKDA into PT+YT for each user");
+  console.log("✅ Split 0.3 wKDA into PT+YT for deployer");
 
   // Check balances
   const deployerPT = await principalToken.balanceOf(deployer.address);
@@ -79,7 +71,7 @@ async function main() {
   if (mockAMM) {
     console.log("\n🏊 Step 3: Adding liquidity to AMM...");
     
-    const liquidityAmount = ethers.parseEther("20.0");
+    const liquidityAmount = ethers.parseEther("0.1");
     
     // Approve AMM to spend tokens
     await principalToken.connect(deployer).approve(MOCK_AMM_ADDRESS, liquidityAmount);
@@ -87,7 +79,7 @@ async function main() {
     
     // Add initial liquidity
     await mockAMM.connect(deployer).addInitialLiquidity(liquidityAmount, liquidityAmount);
-    console.log("✅ Added 20 PT + 20 YT liquidity to AMM");
+    console.log("✅ Added 0.1 PT + 0.1 YT liquidity to AMM");
     
     // Check pool info
     const poolInfo = await mockAMM.getPoolInfo();

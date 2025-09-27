@@ -131,7 +131,7 @@ export function RedeemSection() {
       <div className="card-body">
         <h2 className="card-title flex items-center gap-2">
           <span className="text-2xl">💎</span>
-          Redeem & Claim
+          Redeem Tokens
         </h2>
 
         {/* Token Balances */}
@@ -149,22 +149,39 @@ export function RedeemSection() {
         </div>
 
         {/* Claimable Yield */}
-        {claimableYield > 0n && (
+        {claimableYield > 0n ? (
           <div className="alert alert-success mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <div>
-              <div className="font-bold">Claimable Yield Available!</div>
-              <div>{parseFloat(formatEther(claimableYield)).toFixed(6)} wKDA ready to claim</div>
+            <div className="flex-1">
+              <div className="font-bold">💰 Yield Ready to Claim!</div>
+              <div>{parseFloat(formatEther(claimableYield)).toFixed(12)} wKDA earned from your YT tokens</div>
+              <div className="text-xs opacity-70 mt-1">
+                Full precision: {formatEther(claimableYield)} wKDA
+              </div>
             </div>
             <button 
-              className="btn btn-success btn-sm"
+              className="btn btn-success"
               onClick={handleClaimYield}
               disabled={isPending || isConfirming}
             >
-              Claim Now
+              {isPending || isConfirming ? 'Processing...' : 
+               `Claim ${parseFloat(formatEther(claimableYield)).toFixed(12)} wKDA`}
             </button>
+          </div>
+        ) : (
+          <div className="alert alert-info mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+              <div className="font-bold">No Yield Available</div>
+              <div>YT tokens will accumulate yield over time.</div>
+              <div className="text-xs opacity-70 mt-1">
+                Current yield: {formatEther(claimableYield)} wKDA
+              </div>
+            </div>
           </div>
         )}
 
@@ -252,7 +269,7 @@ export function RedeemSection() {
           </div>
         )}
 
-        {/* Action Buttons */}
+        {/* Redemption Action Button */}
         <div className="space-y-2">
           {redeemType === 'both' && (
             <button
@@ -263,8 +280,7 @@ export function RedeemSection() {
                 isPending || 
                 isConfirming || 
                 !address ||
-                parseFloat(redeemAmount) <= 0 ||
-                isMatured
+                parseFloat(redeemAmount) <= 0
               }
             >
               {isPending ? 'Confirming...' : 
@@ -282,8 +298,7 @@ export function RedeemSection() {
                 isPending || 
                 isConfirming || 
                 !address ||
-                parseFloat(redeemAmount) <= 0 ||
-                !isMatured
+                parseFloat(redeemAmount) <= 0
               }
             >
               {isPending ? 'Confirming...' : 
@@ -291,22 +306,6 @@ export function RedeemSection() {
                `Redeem ${redeemAmount || '0'} PT for wKDA`}
             </button>
           )}
-
-          {/* Separate Claim Yield Button */}
-          <button
-            className="btn btn-success w-full"
-            onClick={handleClaimYield}
-            disabled={
-              isPending || 
-              isConfirming || 
-              !address ||
-              claimableYield === 0n
-            }
-          >
-            {isPending ? 'Confirming...' : 
-             isConfirming ? 'Processing...' : 
-             `Claim ${parseFloat(formatEther(claimableYield)).toFixed(6)} wKDA Yield`}
-          </button>
         </div>
 
         {!address && (

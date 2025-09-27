@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useAccount, useBalance, useReadContract, useChainId } from 'wagmi'
 import { formatEther } from 'viem'
 import { DepositSection } from './DepositSection'
@@ -27,7 +27,7 @@ export function YieldSplittingDashboard() {
   })
 
   // Get user position
-  const { data: userPosition } = useReadContract({
+  const { data: userPosition, refetch: refetchUserPosition } = useReadContract({
     address: contracts.yieldSplitter,
     abi: YIELD_SPLITTER_ABI,
     functionName: 'getUserPosition',
@@ -35,8 +35,23 @@ export function YieldSplittingDashboard() {
   })
 
   // Get user balances
-  const { data: kdaBalance } = useBalance({ address })
-  const { data: wkdaBalance } = useBalance({ address, token: contracts.wrappedKDA })
+  const { data: kdaBalance, refetch: refetchKdaBalance } = useBalance({ address })
+  const { data: wkdaBalance, refetch: refetchWkdaBalance } = useBalance({ address, token: contracts.wrappedKDA })
+
+  // Refresh all data periodically to catch transaction updates
+  const refreshAllData = () => {
+    refetchUserPosition()
+    refetchKdaBalance()
+    refetchWkdaBalance()
+  }
+
+  // Auto-refresh every 10 seconds when connected
+  React.useEffect(() => {
+    if (isConnected) {
+      const interval = setInterval(refreshAllData, 10000)
+      return () => clearInterval(interval)
+    }
+  }, [isConnected])
 
   const formatTimeToMaturity = (maturityTimestamp: bigint) => {
     const now = Math.floor(Date.now() / 1000)
@@ -89,8 +104,17 @@ export function YieldSplittingDashboard() {
         </div>
         <div className="navbar-end">
           {isConnected && (
-            <div className="text-sm">
-              {address?.slice(0, 6)}...{address?.slice(-4)}
+            <div className="flex items-center gap-2">
+              <button 
+                className="btn btn-ghost btn-sm"
+                onClick={refreshAllData}
+                title="Refresh balances"
+              >
+                🔄
+              </button>
+              <div className="text-sm">
+                {address?.slice(0, 6)}...{address?.slice(-4)}
+              </div>
             </div>
           )}
         </div>

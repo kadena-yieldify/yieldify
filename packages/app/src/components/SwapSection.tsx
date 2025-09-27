@@ -1,14 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount, useChainId } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { toast } from 'react-hot-toast'
-
-// Contract addresses - update these with your deployed addresses
-const MOCK_AMM_ADDRESS = '0x...' as const
-const PRINCIPAL_TOKEN_ADDRESS = '0x...' as const
-const YIELD_TOKEN_ADDRESS = '0x...' as const
+import { getContractAddresses, YIELD_SPLITTER_ABI } from '../config/contracts'
 
 const MOCK_AMM_ABI = [
   {
@@ -44,6 +40,16 @@ const MOCK_AMM_ABI = [
     inputs: [{ name: 'ytAmountIn', type: 'uint256' }],
     outputs: [{ name: 'ptAmountOut', type: 'uint256' }],
     stateMutability: 'view',
+  },
+  {
+    name: 'addInitialLiquidity',
+    type: 'function',
+    inputs: [
+      { name: 'ptAmount', type: 'uint256' },
+      { name: 'ytAmount', type: 'uint256' }
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     name: 'getPoolInfo',
@@ -85,34 +91,82 @@ export function SwapSection() {
   const [toAmount, setToAmount] = useState('')
   const [slippage, setSlippage] = useState('0.5') // 0.5% default slippage
   const [isLoading, setIsLoading] = useState(false)
+  const [isApproved, setIsApproved] = useState(false)
   const [yieldPercent, setYieldPercent] = useState('5') // r: default 5%
   const [maturityYears, setMaturityYears] = useState('1') // t: default 1 year
 
   const { address } = useAccount()
+  const chainId = useChainId()
   const { writeContract, data: hash, isPending } = useWriteContract()
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
 
+  // Get contract addresses for current chain
+  const contracts = getContractAddresses(chainId)
+
   // Get token balances
   const { data: ptBalance } = useReadContract({
-    address: PRINCIPAL_TOKEN_ADDRESS,
+    address: contracts.principalToken,
     abi: TOKEN_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
   })
 
   const { data: ytBalance } = useReadContract({
-    address: YIELD_TOKEN_ADDRESS,
+    address: contracts.yieldToken,
     abi: TOKEN_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
   })
 
   // Get pool info (optional: used for reserves display only)
-  const { data: poolInfo } = useReadContract({
-    address: MOCK_AMM_ADDRESS,
+  const { data: poolInfo, refetch: refetchPoolInfo } = useReadContract({
+    address: contracts.mockAMM,
     abi: MOCK_AMM_ABI,
     functionName: 'getPoolInfo',
   })
+
+  // Auto-refresh pool info every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetchPoolInfo()
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [refetchPoolInfo])
+
+  // Get contract stats to auto-fill maturity time
+  const { data: contractStats } = useReadContract({
+    address: contracts.yieldSplitter,
+    abi: YIELD_SPLITTER_ABI,
+    functionName: 'getContractStats',
+  })
+
+  // Check allowance for the from token
+  const fromTokenAddress = fromToken === 'PT' ? contracts.principalToken : contracts.yieldToken
+  const { data: currentAllowance, refetch: refetchAllowance } = useReadContract({
+    address: fromTokenAddress,
+    abi: TOKEN_ABI,
+    functionName: 'allowance',
+    args: address ? [address, contracts.mockAMM] : undefined,
+  })
+
+  // Check if we have sufficient allowance
+  const requiredAmount = fromAmount ? parseEther(fromAmount) : 0n
+  const hasSufficientAllowance = currentAllowance && fromAmount ? 
+    currentAllowance >= requiredAmount : false
+
+  // Auto-fill maturity time when contract stats are available
+  useEffect(() => {
+    if (contractStats && contractStats.length >= 3) {
+      const maturityTimestamp = Number(contractStats[2])
+      const currentTimestamp = Math.floor(Date.now() / 1000)
+      const timeToMaturitySeconds = maturityTimestamp - currentTimestamp
+      
+      if (timeToMaturitySeconds > 0) {
+        const timeToMaturityYears = timeToMaturitySeconds / (365.25 * 24 * 60 * 60)
+        setMaturityYears(Math.max(0.1, timeToMaturityYears).toFixed(2))
+      }
+    }
+  }, [contractStats])
 
   // Compute toAmount using Pendle-like formula
   // PT discount factor DF = 1 / (1 + r)^t
@@ -156,10 +210,11 @@ export function SwapSection() {
     setToAmount(outStr)
   }, [fromAmount, fromToken, yieldPercent, maturityYears])
 
-  const handleSwapTokens = () => {
+  const swapTokens = () => {
     setFromToken(fromToken === 'PT' ? 'YT' : 'PT')
     setFromAmount(toAmount)
     setToAmount('')
+    setIsApproved(false) // Reset approval when switching tokens
   }
 
   const handleApprove = async (tokenAddress: string) => {
@@ -168,12 +223,47 @@ export function SwapSection() {
         address: tokenAddress as `0x${string}`,
         abi: TOKEN_ABI,
         functionName: 'approve',
-        args: [MOCK_AMM_ADDRESS, parseEther('1000000')], // Large approval
+        args: [contracts.mockAMM, parseEther('1000000')], // Large approval
       })
       toast.success('Approval transaction submitted!')
+      setIsApproved(true) // Enable swap button after approval
     } catch (error) {
       console.error('Approval failed:', error)
       toast.error('Approval failed. Please try again.')
+    }
+  }
+
+  const handleInitializePool = async () => {
+    try {
+      const initAmount = parseEther('0.01') // Small initial liquidity
+      
+      // First approve both tokens
+      await writeContract({
+        address: contracts.principalToken,
+        abi: TOKEN_ABI,
+        functionName: 'approve',
+        args: [contracts.mockAMM, initAmount],
+      })
+      
+      await writeContract({
+        address: contracts.yieldToken,
+        abi: TOKEN_ABI,
+        functionName: 'approve',
+        args: [contracts.mockAMM, initAmount],
+      })
+      
+      // Then initialize the pool
+      await writeContract({
+        address: contracts.mockAMM,
+        abi: MOCK_AMM_ABI,
+        functionName: 'addInitialLiquidity',
+        args: [initAmount, initAmount],
+      })
+      
+      toast.success('Pool initialized successfully!')
+    } catch (error) {
+      console.error('Pool initialization failed:', error)
+      toast.error('Pool initialization failed. Make sure you have PT and YT tokens.')
     }
   }
 
@@ -187,18 +277,20 @@ export function SwapSection() {
       setIsLoading(true)
       
       const fromAmountWei = parseEther(fromAmount)
-      const minToAmountWei = parseEther(toAmount) * BigInt(10000 - parseInt(slippage) * 100) / BigInt(10000)
+      // Fix slippage calculation to handle decimal values (e.g., 0.5%)
+      const slippageBasisPoints = Math.floor(parseFloat(slippage) * 100) // Convert % to basis points
+      const minToAmountWei = parseEther(toAmount) * BigInt(10000 - slippageBasisPoints) / BigInt(10000)
 
       if (fromToken === 'PT') {
         await writeContract({
-          address: MOCK_AMM_ADDRESS,
+          address: contracts.mockAMM,
           abi: MOCK_AMM_ABI,
           functionName: 'swapPTForYT',
           args: [fromAmountWei, minToAmountWei],
         })
       } else {
         await writeContract({
-          address: MOCK_AMM_ADDRESS,
+          address: contracts.mockAMM,
           abi: MOCK_AMM_ABI,
           functionName: 'swapYTForPT',
           args: [fromAmountWei, minToAmountWei],
@@ -286,7 +378,7 @@ export function SwapSection() {
         <div className="flex justify-center">
           <button 
             className="btn btn-circle btn-outline"
-            onClick={handleSwapTokens}
+            onClick={swapTokens}
           >
             ↕️
           </button>
@@ -402,36 +494,69 @@ export function SwapSection() {
           </div>
         )}
 
+        {/* Pool Status */}
+        <div className="flex justify-between items-center mb-4">
+          <div className="text-sm">
+            Pool: {poolInfo && poolInfo.length >= 2 ? 
+              `${parseFloat(formatEther(poolInfo[0])).toFixed(4)} PT, ${parseFloat(formatEther(poolInfo[1])).toFixed(4)} YT` : 
+              'Loading...'}
+          </div>
+          <button 
+            className="btn btn-ghost btn-xs"
+            onClick={() => refetchPoolInfo()}
+            title="Refresh pool data"
+          >
+            🔄
+          </button>
+        </div>
+
+        {poolInfo && poolInfo.length >= 2 && poolInfo[0] === 0n && poolInfo[1] === 0n && (
+          <div className="alert alert-warning mb-4">
+            <div>
+              <div className="font-bold">⚠️ AMM Pool Not Initialized</div>
+              <div className="text-sm mt-1">
+                The AMM pool needs to be initialized by the contract owner first. 
+                <br />Contact the deployer or wait for pool initialization.
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="space-y-2">
-          {/* Approve Button (if needed) */}
-          <button
-            className="btn btn-outline w-full"
-            onClick={() => handleApprove(fromToken === 'PT' ? PRINCIPAL_TOKEN_ADDRESS : YIELD_TOKEN_ADDRESS)}
-            disabled={isPending || isConfirming || !address}
-          >
-            Approve {fromToken}-wKDA
-          </button>
-
-          {/* Swap Button */}
-          <button
-            className="btn btn-primary w-full"
-            onClick={handleSwap}
-            disabled={
-              !fromAmount || 
-              !toAmount || 
-              isPending || 
-              isConfirming || 
-              isLoading ||
-              !address ||
-              parseFloat(fromAmount) <= 0
-            }
-          >
-            {isPending ? 'Confirming...' : 
-             isConfirming ? 'Processing...' : 
-             isLoading ? 'Swapping...' : 
-             `Swap ${fromToken} for ${toToken}`}
-          </button>
+          {/* Show Approve button first, then Swap button after approval */}
+          {!isApproved ? (
+            <button
+              className="btn btn-outline w-full"
+              onClick={() => handleApprove(fromToken === 'PT' ? contracts.principalToken : contracts.yieldToken)}
+              disabled={isPending || isConfirming || !address || (poolInfo && poolInfo.length >= 2 && poolInfo[0] === 0n && poolInfo[1] === 0n)}
+            >
+              {isPending || isConfirming ? 'Processing...' : 
+               (poolInfo && poolInfo.length >= 2 && poolInfo[0] === 0n && poolInfo[1] === 0n) ? 'Pool Not Ready' :
+               `Approve ${fromToken}-wKDA`}
+            </button>
+          ) : (
+            <button
+              className="btn btn-primary w-full"
+              onClick={handleSwap}
+              disabled={
+                !fromAmount || 
+                !toAmount || 
+                isPending || 
+                isConfirming || 
+                isLoading ||
+                !address ||
+                parseFloat(fromAmount) <= 0 ||
+                (poolInfo && poolInfo.length >= 2 && poolInfo[0] === 0n && poolInfo[1] === 0n)
+              }
+            >
+              {isPending ? 'Confirming...' : 
+               isConfirming ? 'Processing...' : 
+               isLoading ? 'Swapping...' : 
+               (poolInfo && poolInfo.length >= 2 && poolInfo[0] === 0n && poolInfo[1] === 0n) ? 'Pool Not Ready' :
+               `Swap ${fromToken} for ${toToken}`}
+            </button>
+          )}
         </div>
 
         {!address && (

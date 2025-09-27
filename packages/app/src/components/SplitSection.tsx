@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt, useBalance, useAccount, useChainId } from 'wagmi'
+import { useState, useEffect } from 'react'
+import { useWriteContract, useWaitForTransactionReceipt, useBalance, useAccount, useChainId, useReadContract } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { toast } from 'react-hot-toast'
-import { getContractAddresses, YIELD_SPLITTER_ABI, WRAPPED_KDA_ABI } from '../config/contracts'
+import { getContractAddresses, YIELD_SPLITTER_ABI, WRAPPED_KDA_ABI, TOKEN_ABI } from '../config/contracts'
 
 
 export function SplitSection() {
@@ -21,10 +21,66 @@ export function SplitSection() {
   const contracts = getContractAddresses(chainId)
 
   // Get wKDA balance
-  const { data: wkdaBalance } = useBalance({
+  const { data: wkdaBalance, refetch: refetchWkdaBalance } = useBalance({
     address,
     token: contracts.wrappedKDA,
   })
+
+  // Get PT and YT balances to show after split
+  const { data: ptBalance, refetch: refetchPtBalance, error: ptError } = useReadContract({
+    address: contracts.principalToken,
+    abi: TOKEN_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+  })
+
+  const { data: ytBalance, refetch: refetchYtBalance, error: ytError } = useReadContract({
+    address: contracts.yieldToken,
+    abi: TOKEN_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+  })
+
+  // Check current allowance
+  const { data: currentAllowance, refetch: refetchAllowance } = useReadContract({
+    address: contracts.wrappedKDA,
+    abi: WRAPPED_KDA_ABI,
+    functionName: 'allowance',
+    args: address ? [address, contracts.yieldSplitter] : undefined,
+  })
+
+  // Check if we have sufficient allowance
+  const requiredAmount = splitAmount ? parseEther(splitAmount) : 0n
+  const hasSufficientAllowance = currentAllowance && splitAmount ? 
+    currentAllowance >= requiredAmount : false
+
+  // Debug logging
+  console.log('Contract addresses:', contracts)
+  console.log('PT Balance:', ptBalance, 'Error:', ptError)
+  console.log('YT Balance:', ytBalance, 'Error:', ytError)
+  console.log('wKDA Balance:', wkdaBalance)
+  console.log('Split Amount:', splitAmount)
+  console.log('Required Amount (wei):', requiredAmount.toString())
+  console.log('Current Allowance (wei):', currentAllowance?.toString())
+  console.log('Has Sufficient:', hasSufficientAllowance)
+
+  // Handle transaction completion
+  useEffect(() => {
+    if (isConfirming === false && hash) {
+      // Transaction completed, refresh all balances and allowance
+      refetchWkdaBalance()
+      refetchPtBalance()
+      refetchYtBalance()
+      refetchAllowance()
+      
+      // Reset form state
+      setSplitAmount('')
+      setIsApproved(false)
+      setIsApproving(false)
+      
+      toast.success('Transaction completed successfully!')
+    }
+  }, [isConfirming, hash, refetchWkdaBalance, refetchPtBalance, refetchYtBalance, refetchAllowance])
 
   const handleApprove = async () => {
     if (!splitAmount || parseFloat(splitAmount) <= 0) {
@@ -33,6 +89,7 @@ export function SplitSection() {
     }
 
     try {
+      setIsApproving(true)
       await writeContract({
         address: contracts.wrappedKDA,
         abi: WRAPPED_KDA_ABI,
@@ -41,10 +98,11 @@ export function SplitSection() {
       })
       
       toast.success('Approval transaction submitted!')
-      setIsApproved(true)
+      // Don't set approved here - wait for transaction confirmation
     } catch (error) {
       console.error('Approval failed:', error)
       toast.error('Approval failed. Please try again.')
+      setIsApproving(false)
     }
   }
 
@@ -58,13 +116,12 @@ export function SplitSection() {
       await writeContract({
         address: contracts.yieldSplitter,
         abi: YIELD_SPLITTER_ABI,
-        functionName: 'split',
+        functionName: 'depositAndSplit',
         args: [parseEther(splitAmount)],
       })
       
       toast.success('Split transaction submitted!')
-      setSplitAmount('')
-      setIsApproved(false)
+      // Don't reset here - let useEffect handle it after confirmation
     } catch (error) {
       console.error('Split failed:', error)
       toast.error('Split failed. Please try again.')
@@ -77,8 +134,26 @@ export function SplitSection() {
     }
   }
 
-  const expectedPT = splitAmount ? parseFloat(splitAmount) : 0
-  const expectedYT = splitAmount ? parseFloat(splitAmount) : 0
+  // Pendle-style pricing calculation
+  const yieldPercent = 5 // 5% APY (could be made configurable)
+  const maturityYears = 1 // 1 year (could get from contract stats)
+  
+  const calculatePendlePricing = (amount: number) => {
+    if (!amount) return { pt: 0, yt: 0 }
+    
+    const r = yieldPercent / 100 // Convert percentage to decimal
+    const t = maturityYears
+    const discountFactor = 1 / Math.pow(1 + r, t) // DF = 1/(1+r)^t
+    
+    const ptAmount = amount * discountFactor // PT gets discounted value
+    const ytAmount = amount - ptAmount // YT gets remaining value
+    
+    return { pt: ptAmount, yt: ytAmount }
+  }
+  
+  const pricing = calculatePendlePricing(splitAmount ? parseFloat(splitAmount) : 0)
+  const expectedPT = pricing.pt
+  const expectedYT = pricing.yt
 
   return (
     <div className="card bg-base-100 shadow-xl">
@@ -95,19 +170,51 @@ export function SplitSection() {
           <div>
             <div className="font-bold">How it works:</div>
             <div className="text-sm">
-              Split your wKDA into Principal Tokens (PT) and Yield Tokens (YT) at 1:1 ratio.
-              PT can be redeemed for wKDA at maturity, YT earns yield over time.
+              Split your wKDA using Pendle-style pricing: PT = Amount × [1/(1+r)^t], YT = Amount - PT.
+              PT trades at discount (~95.2% of face value), YT captures yield premium (~4.8%).
             </div>
           </div>
         </div>
 
         {/* Balance Display */}
-        <div className="stat bg-base-200 rounded-lg mb-4">
-          <div className="stat-title">wKDA Balance</div>
-          <div className="stat-value text-lg">
-            {wkdaBalance ? parseFloat(formatEther(wkdaBalance.value)).toFixed(4) : '0.0000'}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="stat bg-base-200 rounded-lg">
+            <div className="stat-title">wKDA Balance</div>
+            <div className="stat-value text-lg">
+              {wkdaBalance ? parseFloat(formatEther(wkdaBalance.value)).toFixed(4) : '0.0000'}
+            </div>
+            <div className="stat-desc text-xs">
+              {contracts.wrappedKDA.slice(0, 8)}...
+            </div>
+          </div>
+          
+          <div className="stat bg-primary/10 rounded-lg">
+            <div className="stat-title">PT-wKDA Balance</div>
+            <div className="stat-value text-lg text-primary">
+              {ptBalance ? parseFloat(formatEther(ptBalance)).toFixed(4) : '0.0000'}
+            </div>
+            <div className="stat-desc text-xs">
+              {ptError ? '❌ Error' : contracts.principalToken.slice(0, 8) + '...'}
+            </div>
+          </div>
+          
+          <div className="stat bg-secondary/10 rounded-lg">
+            <div className="stat-title">YT-wKDA Balance</div>
+            <div className="stat-value text-lg text-secondary">
+              {ytBalance ? parseFloat(formatEther(ytBalance)).toFixed(4) : '0.0000'}
+            </div>
+            <div className="stat-desc text-xs">
+              {ytError ? '❌ Error' : contracts.yieldToken.slice(0, 8) + '...'}
+            </div>
           </div>
         </div>
+
+        {/* Debug Info */}
+        {(ptError || ytError) && (
+          <div className="alert alert-error mb-4">
+            <span>Contract call errors detected. Check console for details.</span>
+          </div>
+        )}
 
         {/* Input Section */}
         <div className="form-control mb-4">
@@ -163,9 +270,10 @@ export function SplitSection() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <div className="font-bold">Projected Annual Yield</div>
+              <div className="font-bold">Pendle-Style Pricing Breakdown</div>
               <div>
-                ~{(expectedYT * 0.05).toFixed(4)} wKDA per year from YT tokens
+                PT Discount: {((1 - (expectedPT / (splitAmount ? parseFloat(splitAmount) : 1))) * 100).toFixed(1)}% 
+                | YT Premium: {((expectedYT / (splitAmount ? parseFloat(splitAmount) : 1)) * 100).toFixed(1)}%
               </div>
             </div>
           </div>
@@ -173,32 +281,31 @@ export function SplitSection() {
 
         {/* Action Buttons */}
         <div className="space-y-2">
-          {!isApproved && (
+          {!hasSufficientAllowance ? (
             <button
               className="btn btn-outline w-full"
               onClick={handleApprove}
-              disabled={!splitAmount || isPending || isConfirming || !address}
+              disabled={!splitAmount || isPending || isConfirming || isApproving || !address}
             >
-              {isPending ? 'Confirming...' : isConfirming ? 'Processing...' : 'Approve wKDA'}
+              {isPending || isConfirming || isApproving ? 'Processing...' : 'Approve wKDA'}
+            </button>
+          ) : (
+            <button
+              className="btn btn-primary w-full"
+              onClick={handleSplit}
+              disabled={
+                !splitAmount || 
+                isPending || 
+                isConfirming || 
+                isApproving ||
+                !address ||
+                parseFloat(splitAmount) <= 0
+              }
+            >
+              {isPending || isConfirming ? 'Processing...' : 
+               `Split ${splitAmount || '0'} wKDA`}
             </button>
           )}
-
-          <button
-            className="btn btn-primary w-full"
-            onClick={handleSplit}
-            disabled={
-              !splitAmount || 
-              !isApproved ||
-              isPending || 
-              isConfirming || 
-              !address ||
-              parseFloat(splitAmount) <= 0
-            }
-          >
-            {isPending ? 'Confirming...' : 
-             isConfirming ? 'Processing...' : 
-             `Split ${splitAmount || '0'} wKDA`}
-          </button>
         </div>
 
         {!address && (
