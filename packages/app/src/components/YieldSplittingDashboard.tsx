@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useAccount, useBalance, useReadContract } from 'wagmi'
+import { useAccount, useBalance, useReadContract, useChainId } from 'wagmi'
 import { formatEther } from 'viem'
 import { DepositSection } from './DepositSection'
 import { SwapSection } from './SwapSection'
@@ -9,54 +9,26 @@ import { SplitSection } from './SplitSection'
 import { RedeemSection } from './RedeemSection'
 import { PortfolioOverview } from './PortfolioOverview'
 import { PriceChart } from './PriceChart'
-
-// Contract addresses - update with deployed addresses
-const YIELD_SPLITTER_ADDRESS = '0x...' as const
-const WRAPPED_KDA_ADDRESS = '0x...' as const
-const PRINCIPAL_TOKEN_ADDRESS = '0x...' as const
-const YIELD_TOKEN_ADDRESS = '0x...' as const
-const DIA_ORACLE_ADDRESS = '0x...' as const
-
-const YIELD_SPLITTER_ABI = [
-  {
-    name: 'getContractStats',
-    type: 'function',
-    inputs: [],
-    outputs: [
-      { name: 'totalDeposited', type: 'uint256' },
-      { name: 'totalYieldDistributed', type: 'uint256' },
-      { name: 'maturity', type: 'uint256' },
-      { name: 'isExpired', type: 'bool' }
-    ],
-    stateMutability: 'view',
-  },
-  {
-    name: 'getUserPosition',
-    type: 'function',
-    inputs: [{ name: 'user', type: 'address' }],
-    outputs: [
-      { name: 'ptBalance', type: 'uint256' },
-      { name: 'ytBalance', type: 'uint256' },
-      { name: 'claimableYield', type: 'uint256' }
-    ],
-    stateMutability: 'view',
-  },
-] as const
+import { getContractAddresses, YIELD_SPLITTER_ABI } from '../config/contracts'
 
 export function YieldSplittingDashboard() {
   const [activeTab, setActiveTab] = useState<'deposit' | 'split' | 'swap' | 'redeem'>('deposit')
   const { address, isConnected } = useAccount()
+  const chainId = useChainId()
+
+  // Get contract addresses for current chain
+  const contracts = getContractAddresses(chainId)
 
   // Get contract stats
   const { data: contractStats } = useReadContract({
-    address: YIELD_SPLITTER_ADDRESS,
+    address: contracts.yieldSplitter,
     abi: YIELD_SPLITTER_ABI,
     functionName: 'getContractStats',
   })
 
   // Get user position
   const { data: userPosition } = useReadContract({
-    address: YIELD_SPLITTER_ADDRESS,
+    address: contracts.yieldSplitter,
     abi: YIELD_SPLITTER_ABI,
     functionName: 'getUserPosition',
     args: address ? [address] : undefined,
@@ -64,7 +36,7 @@ export function YieldSplittingDashboard() {
 
   // Get user balances
   const { data: kdaBalance } = useBalance({ address })
-  const { data: wkdaBalance } = useBalance({ address, token: WRAPPED_KDA_ADDRESS })
+  const { data: wkdaBalance } = useBalance({ address, token: contracts.wrappedKDA })
 
   const formatTimeToMaturity = (maturityTimestamp: bigint) => {
     const now = Math.floor(Date.now() / 1000)

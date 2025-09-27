@@ -1,7 +1,12 @@
 'use client'
 
 import { formatEther } from 'viem'
-import type { Balance } from 'wagmi'
+
+interface Balance {
+  value: bigint
+  decimals: number
+  symbol: string
+}
 
 interface PortfolioOverviewProps {
   userPosition?: readonly [bigint, bigint, bigint] // [ptBalance, ytBalance, claimableYield]

@@ -1,78 +1,26 @@
 'use client'
 
 import { useState } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount, useChainId } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { toast } from 'react-hot-toast'
-
-// Contract addresses - update with deployed addresses
-const YIELD_SPLITTER_ADDRESS = '0x...' as const
-const PRINCIPAL_TOKEN_ADDRESS = '0x...' as const
-const YIELD_TOKEN_ADDRESS = '0x...' as const
-
-const YIELD_SPLITTER_ABI = [
-  {
-    name: 'redeemBeforeMaturity',
-    type: 'function',
-    inputs: [{ name: 'amount', type: 'uint256' }],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    name: 'redeemPTAfterMaturity',
-    type: 'function',
-    inputs: [{ name: 'amount', type: 'uint256' }],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    name: 'claimYield',
-    type: 'function',
-    inputs: [],
-    outputs: [{ name: 'yieldAmount', type: 'uint256' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    name: 'getUserPosition',
-    type: 'function',
-    inputs: [{ name: 'user', type: 'address' }],
-    outputs: [
-      { name: 'ptBalance', type: 'uint256' },
-      { name: 'ytBalance', type: 'uint256' },
-      { name: 'claimableYield', type: 'uint256' }
-    ],
-    stateMutability: 'view',
-  },
-  {
-    name: 'maturity',
-    type: 'function',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-] as const
-
-const TOKEN_ABI = [
-  {
-    name: 'balanceOf',
-    type: 'function',
-    inputs: [{ name: 'account', type: 'address' }],
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-] as const
+import { getContractAddresses, YIELD_SPLITTER_ABI, TOKEN_ABI } from '../config/contracts'
 
 export function RedeemSection() {
   const [redeemAmount, setRedeemAmount] = useState('')
   const [redeemType, setRedeemType] = useState<'both' | 'pt-only'>('both')
 
   const { address } = useAccount()
+  const chainId = useChainId()
   const { writeContract, data: hash, isPending } = useWriteContract()
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
 
+  // Get contract addresses for current chain
+  const contracts = getContractAddresses(chainId)
+
   // Get user position
   const { data: userPosition } = useReadContract({
-    address: YIELD_SPLITTER_ADDRESS,
+    address: contracts.yieldSplitter,
     abi: YIELD_SPLITTER_ABI,
     functionName: 'getUserPosition',
     args: address ? [address] : undefined,
@@ -80,21 +28,21 @@ export function RedeemSection() {
 
   // Get maturity timestamp
   const { data: maturity } = useReadContract({
-    address: YIELD_SPLITTER_ADDRESS,
+    address: contracts.yieldSplitter,
     abi: YIELD_SPLITTER_ABI,
     functionName: 'maturity',
   })
 
   // Get individual token balances
   const { data: ptBalance } = useReadContract({
-    address: PRINCIPAL_TOKEN_ADDRESS,
+    address: contracts.principalToken,
     abi: TOKEN_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
   })
 
   const { data: ytBalance } = useReadContract({
-    address: YIELD_TOKEN_ADDRESS,
+    address: contracts.yieldToken,
     abi: TOKEN_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
@@ -113,7 +61,7 @@ export function RedeemSection() {
 
     try {
       await writeContract({
-        address: YIELD_SPLITTER_ADDRESS,
+        address: contracts.yieldSplitter,
         abi: YIELD_SPLITTER_ABI,
         functionName: 'redeemBeforeMaturity',
         args: [parseEther(redeemAmount)],
@@ -135,7 +83,7 @@ export function RedeemSection() {
 
     try {
       await writeContract({
-        address: YIELD_SPLITTER_ADDRESS,
+        address: contracts.yieldSplitter,
         abi: YIELD_SPLITTER_ABI,
         functionName: 'redeemPTAfterMaturity',
         args: [parseEther(redeemAmount)],
@@ -152,7 +100,7 @@ export function RedeemSection() {
   const handleClaimYield = async () => {
     try {
       await writeContract({
-        address: YIELD_SPLITTER_ADDRESS,
+        address: contracts.yieldSplitter,
         abi: YIELD_SPLITTER_ABI,
         functionName: 'claimYield',
       })

@@ -1,36 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt, useBalance, useAccount } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useBalance, useAccount, useChainId } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { toast } from 'react-hot-toast'
-
-// You'll need to update this with your deployed contract address
-const WRAPPED_KDA_ADDRESS = '0x...' as const
-
-const WRAPPED_KDA_ABI = [
-  {
-    name: 'deposit',
-    type: 'function',
-    inputs: [],
-    outputs: [],
-    stateMutability: 'payable',
-  },
-  {
-    name: 'withdraw',
-    type: 'function',
-    inputs: [{ name: 'amount', type: 'uint256' }],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    name: 'totalKDABacking',
-    type: 'function',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-] as const
+import { getContractAddresses, WRAPPED_KDA_ABI } from '../config/contracts'
 
 export function DepositSection() {
   const [depositAmount, setDepositAmount] = useState('')
@@ -38,18 +12,18 @@ export function DepositSection() {
   const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit')
 
   const { address } = useAccount()
+  const chainId = useChainId()
   const { writeContract, data: hash, isPending } = useWriteContract()
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
 
-  // Get native KDA balance
-  const { data: kdaBalance } = useBalance({
-    address: address,
-  })
+  // Get contract addresses for current chain
+  const contracts = getContractAddresses(chainId)
 
-  // Get wKDA balance
+  // Get balances
+  const { data: kdaBalance } = useBalance({ address })
   const { data: wkdaBalance } = useBalance({
-    address: address,
-    token: WRAPPED_KDA_ADDRESS,
+    address,
+    token: contracts.wrappedKDA,
   })
 
   const handleDeposit = async () => {
@@ -60,7 +34,7 @@ export function DepositSection() {
 
     try {
       await writeContract({
-        address: WRAPPED_KDA_ADDRESS,
+        address: contracts.wrappedKDA,
         abi: WRAPPED_KDA_ABI,
         functionName: 'deposit',
         value: parseEther(depositAmount),
@@ -82,7 +56,7 @@ export function DepositSection() {
 
     try {
       await writeContract({
-        address: WRAPPED_KDA_ADDRESS,
+        address: contracts.wrappedKDA,
         abi: WRAPPED_KDA_ABI,
         functionName: 'withdraw',
         args: [parseEther(withdrawAmount)],

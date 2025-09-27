@@ -1,49 +1,29 @@
 'use client'
 
 import { useState } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt, useBalance, useAccount } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useBalance, useAccount, useChainId } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { toast } from 'react-hot-toast'
+import { getContractAddresses, YIELD_SPLITTER_ABI, WRAPPED_KDA_ABI } from '../config/contracts'
 
-// Contract addresses - update with deployed addresses
-const YIELD_SPLITTER_ADDRESS = '0x...' as const
-const WRAPPED_KDA_ADDRESS = '0x...' as const
-
-const YIELD_SPLITTER_ABI = [
-  {
-    name: 'depositAndSplit',
-    type: 'function',
-    inputs: [{ name: 'amount', type: 'uint256' }],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-] as const
-
-const TOKEN_ABI = [
-  {
-    name: 'approve',
-    type: 'function',
-    inputs: [
-      { name: 'spender', type: 'address' },
-      { name: 'amount', type: 'uint256' }
-    ],
-    outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'nonpayable',
-  },
-] as const
 
 export function SplitSection() {
   const [splitAmount, setSplitAmount] = useState('')
+  const [isApproving, setIsApproving] = useState(false)
   const [isApproved, setIsApproved] = useState(false)
 
   const { address } = useAccount()
+  const chainId = useChainId()
   const { writeContract, data: hash, isPending } = useWriteContract()
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
 
+  // Get contract addresses for current chain
+  const contracts = getContractAddresses(chainId)
+
   // Get wKDA balance
   const { data: wkdaBalance } = useBalance({
-    address: address,
-    token: WRAPPED_KDA_ADDRESS,
+    address,
+    token: contracts.wrappedKDA,
   })
 
   const handleApprove = async () => {
@@ -54,10 +34,10 @@ export function SplitSection() {
 
     try {
       await writeContract({
-        address: WRAPPED_KDA_ADDRESS,
-        abi: TOKEN_ABI,
+        address: contracts.wrappedKDA,
+        abi: WRAPPED_KDA_ABI,
         functionName: 'approve',
-        args: [YIELD_SPLITTER_ADDRESS, parseEther(splitAmount)],
+        args: [contracts.yieldSplitter, parseEther(splitAmount)],
       })
       
       toast.success('Approval transaction submitted!')
@@ -76,9 +56,9 @@ export function SplitSection() {
 
     try {
       await writeContract({
-        address: YIELD_SPLITTER_ADDRESS,
+        address: contracts.yieldSplitter,
         abi: YIELD_SPLITTER_ABI,
-        functionName: 'depositAndSplit',
+        functionName: 'split',
         args: [parseEther(splitAmount)],
       })
       

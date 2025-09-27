@@ -38,9 +38,10 @@ Create `.env` files in both packages:
 
 **packages/hardhat/.env**
 ```env
-PRIVATE_KEY=your_private_key_here
-INFURA_API_KEY=your_infura_key_here
-ETHERSCAN_API_KEY=your_etherscan_key_here
+DEPLOYER_KEY=your_private_key_here
+INFURA_API_KEY=https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/20/evm/rpc
+ETHERSCAN_API_KEY=dummy_for_kadena
+OPTIMISTIC_API_KEY=dummy_for_kadena
 ```
 
 **packages/app/.env.local**
@@ -71,19 +72,24 @@ npx hardhat node
 npx hardhat ignition deploy ignition/modules/YieldSplittingSystem.ts --network localhost
 ```
 
-### 4. Deploy to Testnet
+### 4. Deploy to Kadena Testnet
+
+**Option A: All-in-one deployment (Recommended)**
 ```bash
-# Deploy to Sepolia testnet
-npx hardhat ignition deploy ignition/modules/YieldSplittingSystem.ts --network sepolia
+# Deploy all contracts to Kadena EVM Testnet (Chain 20)
+npx hardhat run scripts/deployToKadena.js --network kadenaTestnet
 ```
 
-### 5. Deploy MockAMM Separately
-After YieldSplitter deployment, get the PT and YT addresses and deploy MockAMM:
-
+**Option B: Step-by-step deployment**
 ```bash
-# Update the addresses in the deployment script
-npx hardhat run scripts/deployMockAMM.js --network sepolia
+# Deploy core system first
+npx hardhat ignition deploy ignition/modules/YieldSplittingSystem.ts --network kadenaTestnet
+
+# Then deploy MockAMM separately
+npx hardhat run scripts/deployMockAMM.js --network kadenaTestnet
 ```
+
+**Important**: Make sure you have KDA in your wallet for gas fees. You can get testnet KDA from the Kadena faucet.
 
 ## 🎨 Frontend Setup
 
