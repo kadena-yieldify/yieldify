@@ -4,10 +4,10 @@ async function main() {
   console.log("🎭 Setting up demo environment...");
 
   // Contract addresses (deployed on Kadena testnet)
-  const WRAPPED_KDA_ADDRESS = "0x31c13bed4969a135bE285Bcb7BfDc56b601EaA43";
-  const YIELD_SPLITTER_ADDRESS = "0x5405d3e877636212CBfBA5Cd7415ca8C26700Bf4";
-  const MOCK_AMM_ADDRESS = "0x5158337793D9913b5967B91a32bB328521D7C7fb";
-  const DIA_ORACLE_ADDRESS = "0xe702013eA3045D265720337127f06a6cCab4Fd15";
+  const WRAPPED_KDA_ADDRESS = "0xF7Bce9D2106773D8d14B17B49FC261EfF52e7d0D";
+  const YIELD_SPLITTER_ADDRESS = "0x81485FBD886d262b671F1789FB066366619eA8c7";
+  const MOCK_AMM_ADDRESS = "0x3aE2a95a17aEdb8B53d0EBa6715336274b098DbF";
+  const DIA_ORACLE_ADDRESS = "0x6B6564Ab45e49cF5B9AA55486cB72c76351D3b73";
 
   if (WRAPPED_KDA_ADDRESS === "0x..." || YIELD_SPLITTER_ADDRESS === "0x...") {
     console.error("❌ Please update contract addresses in this script");

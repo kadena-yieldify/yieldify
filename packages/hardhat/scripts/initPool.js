@@ -3,9 +3,9 @@ const { ethers } = require("hardhat");
 async function main() {
   console.log("🏊 Initializing AMM Pool...");
 
-  // Contract addresses
-  const MOCK_AMM_ADDRESS = "0x5158337793D9913b5967B91a32bB328521D7C7fb";
-  const YIELD_SPLITTER_ADDRESS = "0x5405d3e877636212CBfBA5Cd7415ca8C26700Bf4";
+  // Contract addresses (updated with new deployment)
+  const MOCK_AMM_ADDRESS = "0x3aE2a95a17aEdb8B53d0EBa6715336274b098DbF";
+  const YIELD_SPLITTER_ADDRESS = "0x81485FBD886d262b671F1789FB066366619eA8c7";
 
   const [deployer] = await ethers.getSigners();
   console.log("👤 Deployer:", deployer.address);

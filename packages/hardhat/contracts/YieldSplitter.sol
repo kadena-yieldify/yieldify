@@ -25,18 +25,23 @@ contract YieldSplitter is ReentrancyGuard, Ownable {
     // Maturity timestamp
     uint256 public immutable maturity;
     
-    // Protocol state
-    bool public isExpired;
+    // Contract state
     uint256 public totalDeposited;
     uint256 public totalYieldDistributed;
+    uint256 public lastYieldDistribution;
+    bool public isExpired;
     
-    // User deposits tracking
+    // Pendle-style pricing parameters
+    uint256 public yieldPercentage; // Annual yield percentage in basis points (e.g., 500 = 5%)
+    uint256 public constant BASIS_POINTS = 10000;
+    uint256 public constant SECONDS_PER_YEAR = 365.25 * 24 * 60 * 60; // 31,557,600 seconds
+    
+    // User tracking
     mapping(address => uint256) public userDeposits;
     mapping(address => uint256) public userPTBalance;
     mapping(address => uint256) public userYTBalance;
     
     // Yield distribution
-    uint256 public lastYieldDistribution;
     uint256 public yieldDistributionInterval = 1 days;
     
     // Events
@@ -58,10 +63,12 @@ contract YieldSplitter is ReentrancyGuard, Ownable {
     
     constructor(
         address payable _wrappedKDA,
-        uint256 _maturityDuration // Duration in seconds (e.g., 365 days)
+        uint256 _maturityDuration, // Duration in seconds (e.g., 365 days)
+        uint256 _yieldPercentage   // Annual yield percentage in basis points (e.g., 500 = 5%)
     ) {
         wrappedKDA = WrappedKDA(_wrappedKDA);
         maturity = block.timestamp + _maturityDuration;
+        yieldPercentage = _yieldPercentage;
         
         // Deploy PT and YT tokens
         principalToken = new PrincipalToken(
@@ -90,7 +97,48 @@ contract YieldSplitter is ReentrancyGuard, Ownable {
     }
     
     /**
-     * @notice Deposit wKDA and split into PT and YT tokens
+     * @notice Calculate Pendle-style pricing for PT and YT tokens
+     * @param amount Total amount to split
+     * @return ptAmount Amount of PT tokens to mint
+     * @return ytAmount Amount of YT tokens to mint
+     */
+    function calculatePendlePricing(uint256 amount) public view returns (uint256 ptAmount, uint256 ytAmount) {
+        // Calculate time to maturity in years (with precision)
+        uint256 timeToMaturity = maturity - block.timestamp;
+        
+        // If already matured, use 1:1 ratio
+        if (timeToMaturity == 0) {
+            return (amount, amount);
+        }
+        
+        // Calculate discount factor: DF = 1 / (1 + r)^t
+        // Using fixed-point arithmetic with 18 decimals for precision
+        uint256 PRECISION = 1e18;
+        
+        // Convert yield percentage from basis points to decimal (with precision)
+        uint256 yieldRate = (yieldPercentage * PRECISION) / BASIS_POINTS; // r in 18 decimals
+        
+        // Calculate (1 + r) in 18 decimals
+        uint256 onePlusR = PRECISION + yieldRate;
+        
+        // Calculate time factor: t = timeToMaturity / SECONDS_PER_YEAR (in 18 decimals)
+        uint256 timeFactor = (timeToMaturity * PRECISION) / SECONDS_PER_YEAR;
+        
+        // Calculate (1 + r)^t using approximation for small t
+        // For simplicity, using linear approximation: (1 + r)^t ≈ 1 + r*t
+        uint256 discountDenominator = PRECISION + (yieldRate * timeFactor) / PRECISION;
+        
+        // Calculate PT amount: PT = amount * (1 / (1 + r*t))
+        ptAmount = (amount * PRECISION) / discountDenominator;
+        
+        // Calculate YT amount: YT = amount - PT
+        ytAmount = amount - ptAmount;
+        
+        return (ptAmount, ytAmount);
+    }
+    
+    /**
+     * @notice Deposit wKDA and split into PT and YT tokens using Pendle pricing
      * @param amount Amount of wKDA to deposit and split
      */
     function depositAndSplit(uint256 amount) external nonReentrant onlyBeforeMaturity {
@@ -99,18 +147,21 @@ contract YieldSplitter is ReentrancyGuard, Ownable {
         // Transfer wKDA from user
         wrappedKDA.transferFrom(msg.sender, address(this), amount);
         
+        // Calculate Pendle-style pricing
+        (uint256 ptAmount, uint256 ytAmount) = calculatePendlePricing(amount);
+        
         // Update tracking
         userDeposits[msg.sender] += amount;
-        userPTBalance[msg.sender] += amount;
-        userYTBalance[msg.sender] += amount;
+        userPTBalance[msg.sender] += ptAmount;
+        userYTBalance[msg.sender] += ytAmount;
         totalDeposited += amount;
         
-        // Mint PT and YT tokens (1:1 ratio)
-        principalToken.mint(msg.sender, amount);
-        yieldToken.mint(msg.sender, amount);
+        // Mint PT and YT tokens using Pendle pricing
+        principalToken.mint(msg.sender, ptAmount);
+        yieldToken.mint(msg.sender, ytAmount);
         
         emit Deposit(msg.sender, amount);
-        emit Split(msg.sender, amount, amount, amount);
+        emit Split(msg.sender, amount, ptAmount, ytAmount);
     }
     
     /**

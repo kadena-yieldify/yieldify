@@ -31,11 +31,13 @@ async function main() {
   // 2. Deploy YieldSplitter (1 year maturity)
   console.log("\n✂️ Step 2: Deploying YieldSplitter...");
   const maturityDuration = 365 * 24 * 60 * 60; // 1 year
+  const yieldPercentage = 500; // 5% APY in basis points
   const YieldSplitter = await ethers.getContractFactory("YieldSplitter");
-  const yieldSplitter = await YieldSplitter.deploy(wrappedKDAAddress, maturityDuration);
+  const yieldSplitter = await YieldSplitter.deploy(wrappedKDAAddress, maturityDuration, yieldPercentage);
   await yieldSplitter.waitForDeployment();
   const yieldSplitterAddress = await yieldSplitter.getAddress();
   console.log("✅ YieldSplitter deployed to:", yieldSplitterAddress);
+  console.log("📊 Yield Percentage: 5% APY");
 
   // Get PT and YT addresses
   const ptAddress = await yieldSplitter.principalToken();
