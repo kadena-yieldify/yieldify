@@ -72,7 +72,7 @@ export function YieldSplittingDashboard(): React.JSX.Element {
       {/* Header */}
       <div className="navbar bg-base-100 shadow-lg">
         <div className="navbar-start">
-          <div className="text-xl font-bold">🌾 KYM Finance</div>
+          <div className="text-xl font-bold">KYM Finance</div>
         </div>
         <div className="navbar-center hidden lg:flex">
           <div className="tabs tabs-boxed">
@@ -80,25 +80,25 @@ export function YieldSplittingDashboard(): React.JSX.Element {
               className={`tab ${activeTab === 'deposit' ? 'tab-active' : ''}`}
               onClick={() => setActiveTab('deposit')}
             >
-              💰 Deposit
+              Deposit
             </button>
             <button 
               className={`tab ${activeTab === 'split' ? 'tab-active' : ''}`}
               onClick={() => setActiveTab('split')}
             >
-              ✂️ Split
+              Split
             </button>
             <button 
               className={`tab ${activeTab === 'swap' ? 'tab-active' : ''}`}
               onClick={() => setActiveTab('swap')}
             >
-              🔄 Swap
+              Swap
             </button>
             <button 
               className={`tab ${activeTab === 'redeem' ? 'tab-active' : ''}`}
               onClick={() => setActiveTab('redeem')}
             >
-              💎 Redeem
+              Redeem
             </button>
           </div>
         </div>
@@ -110,11 +110,8 @@ export function YieldSplittingDashboard(): React.JSX.Element {
                 onClick={refreshAllData}
                 title="Refresh balances"
               >
-                🔄
+                Refresh
               </button>
-              <div className="text-sm">
-                {address?.slice(0, 6)}...{address?.slice(-4)}
-              </div>
             </div>
           )}
         </div>
@@ -152,9 +149,9 @@ export function YieldSplittingDashboard(): React.JSX.Element {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Action Panel */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             {activeTab === 'deposit' && <DepositSection />}
             {activeTab === 'split' && <SplitSection />}
             {activeTab === 'swap' && <SwapSection />}
@@ -172,64 +169,6 @@ export function YieldSplittingDashboard(): React.JSX.Element {
 
             {/* Price Chart */}
             <PriceChart />
-
-            {/* Quick Actions */}
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h3 className="card-title text-lg">Quick Actions</h3>
-                <div className="space-y-2">
-                  <button 
-                    className="btn btn-outline btn-sm w-full"
-                    onClick={() => setActiveTab('deposit')}
-                  >
-                    🔄 Wrap KDA
-                  </button>
-                  <button 
-                    className="btn btn-outline btn-sm w-full"
-                    onClick={() => setActiveTab('split')}
-                  >
-                    ✂️ Split Tokens
-                  </button>
-                  <button 
-                    className="btn btn-outline btn-sm w-full"
-                    onClick={() => setActiveTab('swap')}
-                  >
-                    💱 Trade PT/YT
-                  </button>
-                  <button 
-                    className="btn btn-outline btn-sm w-full"
-                    onClick={() => setActiveTab('redeem')}
-                  >
-                    💰 Claim Yield
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Protocol Info */}
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h3 className="card-title text-lg">Protocol Info</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Current APY:</span>
-                    <span className="font-semibold text-success">5.00%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Trading Fee:</span>
-                    <span className="font-semibold">0.30%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>PT Discount:</span>
-                    <span className="font-semibold text-warning">4.00%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>YT Premium:</span>
-                    <span className="font-semibold text-info">2.00%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
