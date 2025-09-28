@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { PropsWithChildren } from 'react'
 import { SITE_DESCRIPTION, SITE_EMOJI, SITE_INFO, SITE_NAME, SITE_URL, SOCIAL_TWITTER } from '@/utils/site'
-import { Layout } from '@/components/Layout'
+// Layout component is not used in this file
 import { headers } from 'next/headers'
 import { Providers } from '@/context'
 import '../assets/globals.css'

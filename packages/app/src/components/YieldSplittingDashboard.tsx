@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { useAccount, useReadContract, useReadContracts, useChainId, useBalance } from 'wagmi'
+import React, { useState, useCallback } from 'react'
+import { useAccount, useReadContract, useChainId, useBalance } from 'wagmi'
 import { formatEther } from 'viem'
 import { DepositSection } from './DepositSection'
 import { SplitSection } from './SplitSection'
@@ -11,7 +11,7 @@ import { PortfolioOverview } from './PortfolioOverview'
 import { PriceChart } from './PriceChart'
 import { Connect } from './Connect'
 import { getContractAddresses } from '@/config/contracts'
-import { YIELD_SPLITTER_ABI, WRAPPED_KDA_ABI } from '@/config/contracts'
+import { YIELD_SPLITTER_ABI } from '@/config/contracts'
 
 export function YieldSplittingDashboard(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<'deposit' | 'split' | 'swap' | 'redeem'>('deposit')
@@ -41,11 +41,11 @@ export function YieldSplittingDashboard(): React.JSX.Element {
   const { data: wkdaBalance, refetch: refetchWkdaBalance } = useBalance({ address, token: contracts.wrappedKDA })
 
   // Refresh all data periodically to catch transaction updates
-  const refreshAllData = () => {
+  const refreshAllData = useCallback(() => {
     refetchUserPosition()
     refetchKdaBalance()
     refetchWkdaBalance()
-  }
+  }, [refetchKdaBalance, refetchUserPosition, refetchWkdaBalance])
 
   // Auto-refresh every 10 seconds when connected
   React.useEffect(() => {
@@ -53,7 +53,7 @@ export function YieldSplittingDashboard(): React.JSX.Element {
       const interval = setInterval(refreshAllData, 10000)
       return () => clearInterval(interval)
     }
-  }, [isConnected])
+  }, [isConnected, refreshAllData])
 
   const formatTimeToMaturity = (maturityTimestamp: bigint) => {
     const now = Math.floor(Date.now() / 1000)
