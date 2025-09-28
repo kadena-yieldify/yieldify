@@ -1,22 +1,18 @@
-# 🎯 KYM Finance
+# KYM-Finance
 
-**A Pendle Finance-inspired yield splitting protocol built on Kadena EVM Testnet**
-
-Transform your yield-bearing assets into tradeable Principal Tokens (PT) and Yield Tokens (YT) with authentic Pendle-style pricing mathematics. Built for ETHGlobal hackathon with professional-grade DeFi functionality.
+**KYM-Finance wraps KDA and splits it into tradable principal and yield tokens to maximize returns.**
 
 ![KYM Finance](https://img.shields.io/badge/Kadena-EVM%20Testnet-purple) ![Next.js](https://img.shields.io/badge/Next.js-15-black) ![Solidity](https://img.shields.io/badge/Solidity-0.8.19-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 
-## 🌟 Features
+## Features
 
-- **🧮 Pendle-Style Pricing**: Authentic discount factor formula `PT = Amount × [1/(1+r)^t]`
-- **💱 Token Splitting**: Split wKDA into Principal Tokens (PT) and Yield Tokens (YT)
-- **🔄 AMM Trading**: Swap PT ↔ YT tokens with dynamic pricing
-- **💰 Yield Claiming**: Accumulate and claim yield from YT token holdings
-- **📊 Real-Time Analytics**: Live portfolio tracking and price charts
-- **🎨 Professional UI**: Modern DaisyUI interface with sequential button flows
-- **⛓️ Kadena Native**: Built specifically for Kadena EVM with optimized gas usage
+- **Pendle-Style Pricing**: Authentic discount factor formula `PT = Amount × [1/(1+r)^t]`
+- **Token Splitting**: Split wKDA into Principal Tokens (PT) and Yield Tokens (YT)
+- **AMM Trading**: Swap PT ↔ YT tokens with dynamic pricing
+- **Yield Claiming**: Accumulate and claim yield from YT token holdings
+- **Kadena Native**: Built specifically for Kadena EVM with optimized gas usage
 
-## 🏗️ Architecture
+## Architecture
 
 ### Smart Contracts
 
@@ -46,9 +42,9 @@ Transform your yield-bearing assets into tradeable Principal Tokens (PT) and Yie
     └── Web3.tsx             # Wallet connection & network config
 ```
 
-## 🧮 Pendle Pricing Mathematics
+## Pendle Pricing Mathematics
 
-### Core Formula
+### Formula
 
 The protocol implements authentic Pendle Finance pricing:
 
@@ -80,7 +76,7 @@ With **5% APY** and **1 year maturity**:
 - **YT Output**: ~0.0476 wKDA (4.76%)
 - **Total**: 1.0 wKDA (perfect conservation)
 
-## 🚀 Deployed Contracts (Kadena EVM Testnet)
+## Deployed Contracts (Kadena EVM Testnet)
 
 | Contract | Address | Purpose |
 |----------|---------|---------|
@@ -96,7 +92,7 @@ With **5% APY** and **1 year maturity**:
 - **RPC**: `https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/20/evm/rpc`
 - **Explorer**: `http://chain-20.evm-testnet-blockscout.chainweb.com`
 
-## 🛠️ Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 - Node.js 18+
@@ -128,7 +124,7 @@ NEXT_PUBLIC_SITE_DESCRIPTION="Pendle-style yield splitting on Kadena"
 NEXT_PUBLIC_SITE_URL="https://your-domain.com"
 ```
 
-## 📋 Usage Guide
+## Usage Guide
 
 ### 1. Connect Wallet
 - Connect MetaMask to Kadena EVM Testnet
@@ -172,7 +168,7 @@ NEXT_PUBLIC_SITE_URL="https://your-domain.com"
 3. Redeem PT + YT back to wKDA at maturity
 ```
 
-## 🧪 Development & Testing
+## Development & Testing
 
 ### Run Local Development
 
@@ -214,24 +210,7 @@ npx hardhat run scripts/checkPool.js --network kadenaTestnet
 npx hardhat run scripts/checkYield.js --network kadenaTestnet
 ```
 
-## 🎨 UI/UX Features
-
-### Sequential Button Flow
-- **Approve → Action**: Industry-standard DeFi flow
-- **Loading States**: Clear transaction feedback
-- **Error Handling**: User-friendly error messages
-
-### Professional Analytics
-- **Portfolio Overview**: Real-time balance tracking
-- **Price Charts**: PT/YT price movements
-- **Yield Tracking**: Precise yield accumulation display
-
-### Responsive Design
-- **Mobile-First**: Optimized for all devices
-- **Dark Theme**: Modern DaisyUI styling
-- **Accessibility**: WCAG compliant interface
-
-## 🔧 Technical Implementation
+## Technical Implementation
 
 ### Smart Contract Features
 
@@ -266,15 +245,7 @@ const handleSplit = async () => {
 }
 ```
 
-## 📊 Project Stats
-
-- **Smart Contracts**: 6 deployed contracts
-- **Frontend Components**: 15+ React components
-- **TypeScript Coverage**: 100%
-- **Gas Optimization**: ~2 KDA total deployment cost
-- **Build Size**: 171kB optimized bundle
-
-## 🚢 Deployment
+## Deployment
 
 ### Vercel Deployment
 
@@ -293,44 +264,10 @@ NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_production_id
 NEXT_PUBLIC_SITE_URL=https://your-domain.vercel.app
 ```
 
-## 🏆 Hackathon Highlights
-
-### Innovation
-- ✅ **First Pendle-style protocol on Kadena**
-- ✅ **Authentic mathematical pricing formulas**
-- ✅ **Professional-grade DeFi UX**
-
-### Technical Excellence
-- ✅ **Zero TypeScript errors**
-- ✅ **Optimized smart contracts**
-- ✅ **Production-ready codebase**
-
-### User Experience
-- ✅ **Intuitive interface design**
-- ✅ **Real-time analytics**
-- ✅ **Mobile-responsive**
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open Pull Request
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- **Pendle Finance** for mathematical inspiration
-- **Kadena** for the innovative blockchain platform
-- **ETHGlobal** for the hackathon opportunity
-- **DaisyUI** for the beautiful component library
-
 ---
 
-**Built with ❤️ for ETHGlobal hackathon**
-
-*Transforming yield farming on Kadena, one split at a time* 🚀
+**Built with ❤️ for ETHGlobal Hackathon New Delhi**
