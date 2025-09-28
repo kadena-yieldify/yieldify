@@ -60,7 +60,7 @@ export default async function RootLayout(props: PropsWithChildren) {
 
       <body>
         <Providers cookies={cookies}>
-          <Layout>{props.children}</Layout>
+          {props.children}
         </Providers>
       </body>
     </html>

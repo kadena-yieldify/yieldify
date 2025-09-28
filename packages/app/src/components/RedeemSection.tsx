@@ -130,7 +130,7 @@ export function RedeemSection() {
     <div className="card bg-base-100 shadow-xl">
       <div className="card-body">
         <h2 className="card-title flex items-center gap-2">
-          <span className="text-2xl">💎</span>
+          <span className="text-2xl"></span>
           Redeem Tokens
         </h2>
 
@@ -155,7 +155,7 @@ export function RedeemSection() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div className="flex-1">
-              <div className="font-bold">💰 Yield Ready to Claim!</div>
+              <div className="font-bold"> Yield Ready to Claim!</div>
               <div>{parseFloat(formatEther(claimableYield)).toFixed(12)} wKDA earned from your YT tokens</div>
               <div className="text-xs opacity-70 mt-1">
                 Full precision: {formatEther(claimableYield)} wKDA

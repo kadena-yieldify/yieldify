@@ -90,7 +90,7 @@ export function DepositSection() {
     <div className="card bg-base-100 shadow-xl">
       <div className="card-body">
         <h2 className="card-title flex items-center gap-2">
-          <span className="text-2xl">🔄</span>
+          <span className="text-2xl"></span>
           KDA Wrapper
         </h2>
         

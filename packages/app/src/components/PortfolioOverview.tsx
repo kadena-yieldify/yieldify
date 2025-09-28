@@ -35,7 +35,7 @@ export function PortfolioOverview({ userPosition, kdaBalance, wkdaBalance }: Por
     <div className="card bg-base-100 shadow-xl">
       <div className="card-body">
         <h3 className="card-title text-lg flex items-center gap-2">
-          <span className="text-xl">📊</span>
+          <span className="text-xl"></span>
           Portfolio Overview
         </h3>
 

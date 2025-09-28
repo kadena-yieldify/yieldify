@@ -1,15 +1,17 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useAccount, useBalance, useReadContract, useChainId } from 'wagmi'
+import React, { useState, useEffect } from 'react'
+import { useAccount, useReadContract, useReadContracts, useChainId, useBalance } from 'wagmi'
 import { formatEther } from 'viem'
 import { DepositSection } from './DepositSection'
-import { SwapSection } from './SwapSection'
 import { SplitSection } from './SplitSection'
+import { SwapSection } from './SwapSection'
 import { RedeemSection } from './RedeemSection'
 import { PortfolioOverview } from './PortfolioOverview'
 import { PriceChart } from './PriceChart'
-import { getContractAddresses, YIELD_SPLITTER_ABI } from '../config/contracts'
+import { Connect } from './Connect'
+import { getContractAddresses } from '@/config/contracts'
+import { YIELD_SPLITTER_ABI, WRAPPED_KDA_ABI } from '@/config/contracts'
 
 export function YieldSplittingDashboard(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<'deposit' | 'split' | 'swap' | 'redeem'>('deposit')
@@ -103,17 +105,7 @@ export function YieldSplittingDashboard(): React.JSX.Element {
           </div>
         </div>
         <div className="navbar-end">
-          {isConnected && (
-            <div className="flex items-center gap-2">
-              <button 
-                className="btn btn-ghost btn-sm"
-                onClick={refreshAllData}
-                title="Refresh balances"
-              >
-                Refresh
-              </button>
-            </div>
-          )}
+          <Connect />
         </div>
       </div>
 
