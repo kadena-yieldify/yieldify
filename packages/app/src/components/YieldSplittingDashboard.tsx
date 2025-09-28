@@ -72,7 +72,7 @@ export function YieldSplittingDashboard(): React.JSX.Element {
       {/* Header */}
       <div className="navbar bg-base-100 shadow-lg">
         <div className="navbar-start">
-          <div className="text-xl font-bold">🌾 Kadena Yield Splitter</div>
+          <div className="text-xl font-bold">🌾 KYM Finance</div>
         </div>
         <div className="navbar-center hidden lg:flex">
           <div className="tabs tabs-boxed">

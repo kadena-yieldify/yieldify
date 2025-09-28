@@ -1,4 +1,4 @@
-# Kadena Yield Splitter - Deployment Guide
+# KYM Finance - Deployment Guide
 
 ## 🚀 Quick Start
 

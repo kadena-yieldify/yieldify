@@ -1,10 +1,10 @@
-# 🎯 Kadena Yield Splitter
+# 🎯 KYM Finance
 
 **A Pendle Finance-inspired yield splitting protocol built on Kadena EVM Testnet**
 
 Transform your yield-bearing assets into tradeable Principal Tokens (PT) and Yield Tokens (YT) with authentic Pendle-style pricing mathematics. Built for ETHGlobal hackathon with professional-grade DeFi functionality.
 
-![Kadena Yield Splitter](https://img.shields.io/badge/Kadena-EVM%20Testnet-purple) ![Next.js](https://img.shields.io/badge/Next.js-15-black) ![Solidity](https://img.shields.io/badge/Solidity-0.8.19-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
+![KYM Finance](https://img.shields.io/badge/Kadena-EVM%20Testnet-purple) ![Next.js](https://img.shields.io/badge/Next.js-15-black) ![Solidity](https://img.shields.io/badge/Solidity-0.8.19-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 
 ## 🌟 Features
 
@@ -123,7 +123,7 @@ Create `.env.local` in `packages/app/`:
 
 ```env
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
-NEXT_PUBLIC_SITE_NAME="Kadena Yield Splitter"
+NEXT_PUBLIC_SITE_NAME="KYM Finance"
 NEXT_PUBLIC_SITE_DESCRIPTION="Pendle-style yield splitting on Kadena"
 NEXT_PUBLIC_SITE_URL="https://your-domain.com"
 ```

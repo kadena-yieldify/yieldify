@@ -1,7 +1,7 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  console.log("🚀 Deploying Kadena Yield Splitter to Kadena EVM Testnet...");
+  console.log("🚀 Deploying KYM Finance to Kadena EVM Testnet...");
   
   const [deployer] = await ethers.getSigners();
   console.log("👤 Deploying with account:", deployer.address);
