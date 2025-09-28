@@ -13,6 +13,7 @@
 - **Kadena Native**: Built specifically for Kadena EVM with optimized gas usage
 
 ## Architecture
+<img width="6317" height="3829" alt="kym-finance" src="https://github.com/user-attachments/assets/a7f63197-1542-4ebd-bc2e-8c01d9dc2586" />
 
 ### Smart Contracts
 
