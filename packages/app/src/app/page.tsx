@@ -22,8 +22,7 @@ export default function LandingPage() {
               Split Your Yield, <span className="text-primary">Maximize Returns</span>
             </h1>
             <p className="text-xl mb-8 opacity-80">
-              A Pendle Finance-inspired yield splitting protocol on Kadena. 
-              Transform your yield-bearing assets into tradeable Principal Tokens (PT) and Yield Tokens (YT).
+            KYM-Finance wraps KDA and splits it into tradable principal and yield tokens to maximize returns.
             </p>
             
             {/* Feature Cards */}

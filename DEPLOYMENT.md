@@ -2,7 +2,7 @@
 
 ## 🚀 Quick Start
 
-This is a Pendle Finance-inspired yield splitting MVP built for the ETH Global hackathon on Kadena blockchain.
+KYM-Finance wraps KDA and splits it into tradable principal and yield tokens to maximize returns.
 
 ### Features
 - **Deposit**: Wrap KDA → wKDA (1:1 ratio)
