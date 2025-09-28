@@ -33,11 +33,11 @@ async function main() {
   
   // First, get more tokens by splitting wKDA
   console.log("\n💰 Step 1: Getting more tokens...");
-  const wrapAmount = ethers.parseEther("0.5");
+  const wrapAmount = ethers.parseEther("2");
   const wrapTx = await wrappedKDA.deposit({ value: wrapAmount });
   await wrapTx.wait();
   
-  const splitAmount = ethers.parseEther("0.4");
+  const splitAmount = ethers.parseEther("1.9");
   const approveTx = await wrappedKDA.approve(YIELD_SPLITTER_ADDRESS, splitAmount);
   await approveTx.wait();
   
